@@ -13,62 +13,63 @@ namespace ToDoList.Controllers
 
         public IActionResult Index(string id)
         {
-            var viewModel = new ToDoViewModel();
+            var model = new ToDoViewModel();
 
-            viewModel.Filters = new Filters(id);
-            viewModel.Categories = context.Categories.ToList();
-            viewModel.Statuses = context.Statuses.ToList();
-            viewModel.DueFilters = Filters.DueFilterValues;
+            model.Filters = new Filters(id);
+            model.Categories = context.Categories.ToList();
+            model.Statuses = context.Statuses.ToList();
+            model.DueFilters = Filters.DueFilterValues;
 
             IQueryable<ToDo> query = context.ToDos
                 .Include(t => t.Category).Include(t => t.Status);
 
-            if (viewModel.Filters.HasCategory)
+            if (model.Filters.HasCategory)
             {
-                query = query.Where(t => t.CategoryId == viewModel.Filters.CategoryId);
+                query = query.Where(t => t.CategoryId == model.Filters.CategoryId);
             }
-            if (viewModel.Filters.HasStatus)
+            if (model.Filters.HasStatus)
             {
-                query = query.Where(t => t.StatusId == viewModel.Filters.StatusId);
+                query = query.Where(t => t.StatusId == model.Filters.StatusId);
             }
-            if (viewModel.Filters.HasDue)
+            if (model.Filters.HasDue)
             {
                 var today = DateTime.Today;
-                if (viewModel.Filters.IsPast)
+                if (model.Filters.IsPast)
                     query = query.Where(t => t.DueDate < today);
-                else if (viewModel.Filters.IsFuture)
+                else if (model.Filters.IsFuture)
                     query = query.Where(t => t.DueDate > today);
-                else if (viewModel.Filters.IsToday)
+                else if (model.Filters.IsToday)
                     query = query.Where(t => t.DueDate == today);
             }
 
-            viewModel.Tasks = query.OrderBy(t => t.DueDate).ToList();
+            model.Tasks = query.OrderBy(t => t.DueDate).ToList();
 
-            return View(viewModel);
+            return View(model);
         }
 
 
         public IActionResult Add()
         {
-            ViewBag.Categories = context.Categories.ToList();
-            ViewBag.Statuses = context.Statuses.ToList();
-            return View();
+            var model = new ToDoViewModel();
+            model.Categories = context.Categories.ToList();
+            model.Statuses = context.Statuses.ToList();
+            return View(model);
         }
 
         [HttpPost]
-        public IActionResult Add(ToDo task)
+        public IActionResult Add(ToDoViewModel model)
         {
             if (ModelState.IsValid)
             {
-                context.ToDos.Add(task);
+                context.ToDos.Add(model.CurrentTask);
                 context.SaveChanges();
                 return RedirectToAction("Index");
             }
             else
             {
-                ViewBag.Categories = context.Categories.ToList();
-                ViewBag.Statuses = context.Statuses.ToList();
-                return View(task);
+                model.Categories = context.Categories.ToList();
+                model.Statuses = context.Statuses.ToList();
+                return View(model);
             }
         }
 
