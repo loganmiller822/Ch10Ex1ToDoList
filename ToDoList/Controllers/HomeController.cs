@@ -13,34 +13,40 @@ namespace ToDoList.Controllers
 
         public IActionResult Index(string id)
         {
-            // load current filters and data needed for filter drop downs in ViewBag
-            var filters = new Filters(id);
-            ViewBag.Filters = filters;
-            ViewBag.Categories = context.Categories.ToList();
-            ViewBag.Statuses = context.Statuses.ToList();
-            ViewBag.DueFilters = Filters.DueFilterValues;
+            var viewModel = new ToDoViewModel();
 
-            // get ToDo objects from database based on current filters
+            viewModel.Filters = new Filters(id);
+            viewModel.Categories = context.Categories.ToList();
+            viewModel.Statuses = context.Statuses.ToList();
+            viewModel.DueFilters = Filters.DueFilterValues;
+
             IQueryable<ToDo> query = context.ToDos
                 .Include(t => t.Category).Include(t => t.Status);
-            if (filters.HasCategory) {
-                query = query.Where(t => t.CategoryId == filters.CategoryId);
+
+            if (viewModel.Filters.HasCategory)
+            {
+                query = query.Where(t => t.CategoryId == viewModel.Filters.CategoryId);
             }
-            if (filters.HasStatus) {
-                query = query.Where(t => t.StatusId == filters.StatusId);
+            if (viewModel.Filters.HasStatus)
+            {
+                query = query.Where(t => t.StatusId == viewModel.Filters.StatusId);
             }
-            if (filters.HasDue) {
+            if (viewModel.Filters.HasDue)
+            {
                 var today = DateTime.Today;
-                if (filters.IsPast)
+                if (viewModel.Filters.IsPast)
                     query = query.Where(t => t.DueDate < today);
-                else if (filters.IsFuture)
+                else if (viewModel.Filters.IsFuture)
                     query = query.Where(t => t.DueDate > today);
-                else if (filters.IsToday)
+                else if (viewModel.Filters.IsToday)
                     query = query.Where(t => t.DueDate == today);
             }
-            var tasks = query.OrderBy(t => t.DueDate).ToList();
-            return View(tasks);
+
+            viewModel.Tasks = query.OrderBy(t => t.DueDate).ToList();
+
+            return View(viewModel);
         }
+
 
         public IActionResult Add()
         {
